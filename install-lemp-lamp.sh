@@ -12,72 +12,73 @@ server=$4
 passmysql=$5
 php=$6
 webserver=$7
+node=$8
 #read -p "Enter username : " username
 #read -p "Enter password : " password
 #read -p "Enter le nom de votre site : " site
 #read -p "Enter ServerName (exemple.com) : " server
 #read -p "Enter MySQl root password : " passmysql
+#read -p "Enter PHP version : " php
+#read -p "Enter Webserver name : " webserver
+#read -p "Enter Node version : " node
 ################################################################################################
 #Update system
 ################################################################################################
 
-sudo -s
-
-apt-get update -y
-apt-get upgrade -y
+sudo apt update && sudo apt upgrade -y
 
 ###############################################################################################
 #Install Webserver apache2 or nginx
 ###############################################################################################
 
 if [[ "$webserver" == "apache2" ]]; then
-apt-get install apache2 -y
+sudo apt-get install apache2 -y
 fi
 if [[ "$webserver" == "nginx" ]]; then
-apt-get install nginx -y
+sudo apt-get install nginx -y
 fi
 
 ###############################################################################################
 #Install PHP according to version
 ###############################################################################################
-add-apt-repository ppa:ondrej/php -y
+sudo add-apt-repository ppa:ondrej/php -y
 
 if [[ "$php" == "7.1" ]]; then
-        apt-get install php7.1-fpm php7.1-mysql php7.1-cli php7.1-common php7.1-mbstring php7.1-gd php7.1-intl php7.1-xml php7.1-zip php7.1-imagick php7.1-xsl php7.1-curl php7.1-imap php7.1-zip php7.1-soap php7.1-bcmath php7.1-redis -y
+        sudo apt-get install php7.1-fpm php7.1-mysql php7.1-cli php7.1-common php7.1-mbstring php7.1-gd php7.1-intl php7.1-xml php7.1-zip php7.1-imagick php7.1-xsl php7.1-curl php7.1-imap php7.1-zip php7.1-soap php7.1-bcmath php7.1-redis -y
 
 fi
 if [[ "$php" == "7.2" ]]; then
-        apt-get install php7.2-fpm php7.2-mysql php7.2-cli php7.2-common php7.2-mbstring php7.2-gd php7.2-intl php7.2-xml php7.2-zip php7.2-imagick php7.2-xsl php7.2-curl php7.2-imap php7.2-zip php7.2-soap php7.2-bcmath php7.2-redis -y
+        sudo apt-get install php7.2-fpm php7.2-mysql php7.2-cli php7.2-common php7.2-mbstring php7.2-gd php7.2-intl php7.2-xml php7.2-zip php7.2-imagick php7.2-xsl php7.2-curl php7.2-imap php7.2-zip php7.2-soap php7.2-bcmath php7.2-redis -y
 fi
 if [[ "$php" == "7.3" ]]; then
-        apt-get install php7.3-fpm php7.3-mysql php7.3-cli php7.3-common php7.3-mbstring php7.3-gd php7.3-intl php7.3-xml php7.3-zip php7.3-imagick php7.3-xsl php7.3-curl php7.3-imap php7.3-zip php7.3-soap php7.3-bcmath php7.3-redis -y
+        sudo apt-get install php7.3-fpm php7.3-mysql php7.3-cli php7.3-common php7.3-mbstring php7.3-gd php7.3-intl php7.3-xml php7.3-zip php7.3-imagick php7.3-xsl php7.3-curl php7.3-imap php7.3-zip php7.3-soap php7.3-bcmath php7.3-redis -y
 
 fi
 if [[ "$php" == "7.4" ]]; then
-        apt-get install php7.4-fpm php7.4-mysql php7.4-cli php7.4-common php7.4-mbstring php7.4-gd php7.4-intl php7.4-xml php7.4-zip php7.4-imagick php7.4-xsl php7.4-curl php7.4-imap php7.4-zip php7.4-soap php7.4-bcmath php7.4-redis -y
+        sudo apt-get install php7.4-fpm php7.4-mysql php7.4-cli php7.4-common php7.4-mbstring php7.4-gd php7.4-intl php7.4-xml php7.4-zip php7.4-imagick php7.4-xsl php7.4-curl php7.4-imap php7.4-zip php7.4-soap php7.4-bcmath php7.4-redis -y
 
 fi
 if [[ "$webserver" == "apache2" ]]; then
-a2enmod proxy_fcgi setenvif headers rewrite expires deflate
-a2enconf php$php-fpm
-systemctl restart apache2
-systemctl reload apache2
+sudo a2enmod proxy_fcgi setenvif headers rewrite expires deflate
+sudo a2enconf php$php-fpm
+sudo systemctl restart apache2
+sudo systemctl reload apache2
 fi
 
 if [[ "$webserver" == "nginx" ]]; then
-systemctl start php$php-fpm
-systemctl enable php$php-fpm
-systemctl reload nginx
+sudo systemctl start php$php-fpm
+sudo systemctl enable php$php-fpm
+sudo systemctl reload nginx
 fi
 ###############################################################################################
 #Add User
 ###############################################################################################
 
 pass=$(perl -e 'print crypt($ARGV[0], "password")' $password)
-useradd -m -p $pass $username
-mkdir /home/$username/httpdocs
-mkdir /home/$username/logs
-chown $username:$username /home/$username/httpdocs
+sudo useradd -m -p $pass $username
+sudo mkdir /home/$username/httpdocs
+sudo mkdir /home/$username/logs
+sudo chown $username:$username /home/$username/httpdocs
 
 ###############################################################################################
 #Pool configuration
@@ -94,8 +95,8 @@ pm.max_children = 10
 pm.start_servers = 5
 pm.min_spare_servers = 2
 pm.max_spare_servers = 5
-pm.max_requests = 500" >> /etc/php/$php/fpm/pool.d/$site.conf
-service php$php-fpm restart
+pm.max_requests = 500" | sudo tee /etc/php/$php/fpm/pool.d/$site.conf
+sudo service php$php-fpm restart
 
 ###############################################################################################
 #Configure Webserver
@@ -116,9 +117,9 @@ Options Indexes FollowSymLinks
 AllowOverride All
 Require all granted
 </Directory>
-</VirtualHost>" >> /etc/apache2/sites-available/$site.conf
-a2ensite $site.conf
-service apache2 restart
+</VirtualHost>" | sudo tee /etc/apache2/sites-available/$site.conf
+sudo a2ensite $site.conf
+sudo service apache2 restart
 fi
 
 ########################      NGINX     ######################################################
@@ -133,7 +134,7 @@ echo "server {
         access_log  /home/$username/logs/access.log;
 
         location / {
-                try_files $uri $uri/ =404;
+                try_files \$uri \$uri/ =404;
         }
 
         location ~ \.php$ {
@@ -144,19 +145,19 @@ echo "server {
         location ~ /\.ht {
                 deny all;
         }
-}" >> /etc/nginx/sites-available/$site
-ln -s /etc/nginx/sites-available/$site /etc/nginx/sites-enabled/
-unlink /etc/nginx/sites-enabled/default
-nginx -t
-systemctl reload nginx
+}" | sudo tee /etc/nginx/sites-available/$site
+sudo ln -s /etc/nginx/sites-available/$site /etc/nginx/sites-enabled/
+sudo unlink /etc/nginx/sites-enabled/default
+sudo nginx -t
+sudo systemctl reload nginx
 fi
 
 ###############################################################################################
 #Install and secure Mysql 
 ###############################################################################################
 
-apt-get install mysql-server -y
-mysql -u root <<-EOF
+sudo apt-get install mysql-server -y
+sudo mysql -u root <<-EOF
 update mysql.user
     set authentication_string=PASSWORD('$passmysql'), plugin="mysql_native_password"
     where User='root' and Host='localhost';
@@ -165,18 +166,18 @@ DELETE FROM mysql.user WHERE User='';
 DELETE FROM mysql.db WHERE Db='test' OR Db='test\\_%';
 FLUSH PRIVILEGES;
 EOF
-service mysql restart
+sudo service mysql restart
 
 ###############################################################################################
 #install certbot for SSL
 ###############################################################################################
 
-add-apt-repository ppa:certbot/certbot -y
+sudo add-apt-repository ppa:certbot/certbot -y
 if [[ "$webserver" == "apache2" ]]; then
-apt-get install python-certbot-apache -y
+sudo apt-get install python-certbot-apache -y
 fi
 if [[ "$webserver" == "nginx" ]]; then
-apt-get install python-certbot-nginx -y
+sudo apt-get install python-certbot-nginx -y
 fi
 #certbot --apache -d $server -d www.$server
 #certbot renew --dry-run
@@ -185,39 +186,61 @@ fi
 #Install ClamAV
 ###############################################################################################
 
-apt-get install clamav clamav-daemon clamav-freshclam -y
-systemctl stop clamav-freshclam
-freshclam
-systemctl start clamav-freshclam
+sudo apt-get install clamav clamav-daemon clamav-freshclam -y
+sudo systemctl stop clamav-freshclam
+sudo freshclam
+sudo systemctl start clamav-freshclam
 
 ###############################################################################################
 #Install Fail2ban
 ###############################################################################################
 
-apt-get install fail2ban -y
-systemctl start fail2ban
-systemctl enable fail2ban
+sudo apt-get install fail2ban -y
+sudo systemctl start fail2ban
+sudo systemctl enable fail2ban
 echo "[sshd]
 enabled = true
 port = 22
 filter = sshd
 logpath = /var/log/auth.log
 maxretry = 3
-bantime  = 600" >> /etc/fail2ban/jail.local
-systemctl restart fail2ban
+bantime  = 300" | sudo tee /etc/fail2ban/jail.local
+sudo systemctl restart fail2ban
 
 ###############################################################################################
 #Install Git Composer
 ###############################################################################################
 
-apt-get install git composer -y
+sudo apt-get install git composer -y
 
 ###############################################################################################
-#index.php
+#Install build-essential
 ###############################################################################################
 
-su $username
+sudo apt install build-essential -y
 
+###############################################################################################
+#Install node with user created
+###############################################################################################
+
+sudo su $username <<EOF
+cd /home/$username
+if [[ "$node" != "None" ]]; then
+curl -sL https://raw.githubusercontent.com/creationix/nvm/v0.35.2/install.sh -o install_nvm.sh | bash
+bash install_nvm.sh
+source ~/.nvm/nvm.sh
+source ~/.profile
+source ~/.bashrc
+nvm install $node
+rm -rf install_nvm.sh
+fi
+EOF
+
+###############################################################################################
+#Index.php 
+###############################################################################################
+sudo su $username <<EOF
 echo "<?php
 phpinfo();
-?>" >> /home/$username/httpdocs/index.php
+?>"  | tee /home/$username/httpdocs/index.php
+EOF
